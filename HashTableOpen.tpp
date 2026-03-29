@@ -1,6 +1,16 @@
 template <typename Key, typename Val>
 HashTableOpen<Key, Val>::HashTableOpen(int i) {
     // TODO
+    if (i <= 0) {
+        throw string("Hash table size must be greater than 0.");
+    }
+
+    M = i;
+    ht = new LinkedList<Record>*[M];
+
+    for (int j = 0; j < M; j++) {
+        ht[j] = new LinkedList<Record>;
+    }
 }
 
 template <typename Key, typename Val>
@@ -22,6 +32,10 @@ HashTableOpen<Key, Val>& HashTableOpen<Key, Val>::operator=
 template <typename Key, typename Val>
 HashTableOpen<Key, Val>::~HashTableOpen() {
     // TODO
+    for (int i = 0; i < M; i++) {
+        delete ht[i];
+    }
+    delete[] ht;
 }
 
 template <typename Key, typename Val>
@@ -100,67 +114,96 @@ void HashTableOpen<Key, Val>::copy(const HashTableOpen<Key, Val>& copyObj) {
 template <typename Key, typename Val>
 Val HashTableOpen<Key, Val>::find(const Key& k) const {
     // TODO
+    int slot = hash(k);
+
+    LinkedList<Record>* list = ht[slot];
+    int len = list->getLength();
+
+    for (int i = 0; i < len; i++) {
+        Record r = list->getElement(i);
+        if (r.k == k) {
+            return r.v;
+        }
+    }
+
+    throw string("find: key not found");
 }
 
 template <typename Key, typename Val>
 int HashTableOpen<Key, Val>::hash(const Key& k) const {
-    // how long should each fold be
-    // changing this means you should also change the reinterpeted data type
     const int FOLD_LEN = 4;
 
-    // if the fold length is 4, then must treat the string as unsigned numbers
     unsigned* ikey = (unsigned*) k.c_str();
-
-    // calculate how many folds there are
     int ilen = k.length() / FOLD_LEN;
 
-    // accumulator
     unsigned sum = 0;
 
-    // for each fold, now treated as a number, add it to the running total
     for (int i = 0; i < ilen; i++) {
         sum += ikey[i];
     }
 
-    // calculate how many leftover characters there are
     int extra = k.length() - ilen * FOLD_LEN;
 
-    // create a temporary array that will hold those extra characters
     char temp[FOLD_LEN];
 
-    // clear out that array with a 0 value
     ikey    = (unsigned*) temp;
     ikey[0] = 0;
 
-    // copy the extra characters over
     for (int i = 0; i < extra; i++) {
         temp[i] = k[ilen * FOLD_LEN + i];
     }
 
-    // add these final characters as a number to the running total
     sum += ikey[0];
 
-    // calculate the slot position
     int slot = sum % M;
 
-    // display the hashing information
     cout << k << "\thashes to slot " << slot << endl;
 
-    // return the valid slot position
     return slot;
 }
 
 template <typename Key, typename Val>
 void HashTableOpen<Key, Val>::insert(const Key& k, const Val& v) {
     // TODO
+    int slot = hash(k);
+
+    Record newRecord(k, v);
+
+    if (ht[slot]->isEmpty()) {
+        ht[slot]->append(newRecord);
+    }
+    else {
+        ht[slot]->insert(0, newRecord);
+    }
 }
 
 template <typename Key, typename Val>
 void HashTableOpen<Key, Val>::remove(const Key& k) {
     // TODO
+    int slot = hash(k);
+
+    LinkedList<Record>* list = ht[slot];
+    int len = list->getLength();
+
+    for (int i = 0; i < len; i++) {
+        Record r = list->getElement(i);
+        if (r.k == k) {
+            list->remove(i);
+            return;
+        }
+    }
+
+    throw string("remove: key not found");
 }
 
 template <typename Key, typename Val>
 int HashTableOpen<Key, Val>::size() const {
     // TODO
+    int count = 0;
+
+    for (int i = 0; i < M; i++) {
+        count += ht[i]->getLength();
+    }
+
+    return count;
 }
